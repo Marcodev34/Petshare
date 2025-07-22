@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
@@ -20,7 +20,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new UnauthorizedException('Email already registered');
+      throw new BadRequestException('Email already registered');
     }
     const saltRounds = this.configService.get<number>('BCRYPT_SALT') || 10;
     const password = await bcrypt.hash(dto.password, saltRounds);
@@ -41,12 +41,12 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new BadRequestException('Invalid credentials');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new BadRequestException('Invalid credentials');
     }
 
     const token = this.JwtService.sign({ id: user.id, email: user.email });
