@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Pets" ALTER COLUMN "age" SET DATA TYPE TEXT;

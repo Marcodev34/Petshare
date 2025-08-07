@@ -32,7 +32,7 @@ model Pets {
   photo3      String?
   photo4      String?
   name        String
-  age         Int
+  age         String
   breed       String
   sex         String
   tutor       String

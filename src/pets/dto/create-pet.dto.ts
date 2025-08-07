@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsInt, IsNotEmpty } from 'class-validator';
+import { IsOptional, IsString, IsNotEmpty } from 'class-validator';
 
 export class CreatePetDto {
   @IsOptional()
@@ -25,8 +25,8 @@ export class CreatePetDto {
   @IsNotEmpty()
   name: string;
 
-  @IsInt()
-  age: number;
+  @IsString()
+  age: string;
 
   @IsString()
   @IsNotEmpty()
@@ -47,4 +47,6 @@ export class CreatePetDto {
   @IsString()
   @IsNotEmpty()
   description: string;
+
+  photos?: Express.Multer.File[];
 }
