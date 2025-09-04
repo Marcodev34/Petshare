@@ -5,9 +5,9 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
   const config = new DocumentBuilder()
-    .setTitle('Minha API')
+    .setTitle('Petshare API')
     .setDescription('Documentação com Swagger')
     .setVersion('1.0')
     .addBearerAuth()

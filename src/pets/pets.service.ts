@@ -94,6 +94,127 @@ export class PetsService {
     });
   }
 
+  async updateAvatar(
+    id: string,
+    avatar: Express.Multer.File[],
+    removePhotos?: string[],
+  ) {
+    const pet = await this.prisma.pets.findUnique({
+      where: { id },
+    });
+    if (!pet?.avatar) {
+      throw new NotFoundException('pet not found');
+    }
+
+    if (avatar.length === 0) {
+      throw new NotFoundException('No photo uploaded');
+    }
+
+    const uploadedPhotos = await this.uploadPhotos(avatar);
+
+    const petData = {
+      ...pet,
+      avatar: uploadedPhotos[0],
+    };
+
+    await this.deletePhotosFromSupabase([pet.avatar]);
+
+    return this.prisma.pets.update({
+      where: { id },
+      data: petData,
+    });
+  }
+
+  async updatePhotos(
+    id: string,
+    photos: Express.Multer.File[],
+    removePhotos?: string[],
+  ) {
+    const pet = await this.prisma.pets.findUnique({
+      where: { id },
+    });
+
+    if (!pet) {
+      throw new NotFoundException('Pet not found');
+    }
+
+    const photoFields = ['photo1', 'photo2', 'photo3', 'photo4'];
+    const updatedData = {};
+    const urlsToRemove: string[] = [];
+    let hasChanges = false;
+
+    // Remover fotos solicitadas
+    if (removePhotos?.length) {
+      for (const field of removePhotos) {
+        if (photoFields.includes(field)) {
+          if (pet[field]) {
+            urlsToRemove.push(pet[field]);
+            updatedData[field] = null;
+            hasChanges = true;
+          }
+        }
+      }
+    }
+
+    // Upload das novas fotos e remoção das fotos antigas substituídas
+    if (photos && photos.length > 0) {
+      // Primeiro, remove as fotos antigas que serão substituídas
+      const photosToReplace: string[] = [];
+      for (let i = 0; i < Math.min(photos.length, photoFields.length); i++) {
+        const field = photoFields[i];
+        if (pet[field]) {
+          photosToReplace.push(pet[field]);
+        }
+      }
+
+      if (photosToReplace.length > 0) {
+        urlsToRemove.push(...photosToReplace);
+      }
+
+      try {
+        const uploadedPhotos = await this.uploadPhotos(photos);
+
+        // Mapeia as novas fotos para os campos photo1, photo2, etc.
+        for (
+          let i = 0;
+          i < Math.min(uploadedPhotos.length, photoFields.length);
+          i++
+        ) {
+          const field = photoFields[i];
+          updatedData[field] = uploadedPhotos[i];
+          hasChanges = true;
+        }
+      } catch (error) {
+        throw new Error(`Erro no upload das fotos: ${error.message}`);
+      }
+    }
+
+    // Remove todas as fotos coletadas do Supabase
+    if (urlsToRemove.length > 0) {
+      try {
+        await this.deletePhotosFromSupabase(urlsToRemove);
+      } catch (error) {
+        // Continua mesmo se houver erro na remoção
+      }
+    }
+
+    // Verifica se há mudanças para atualizar
+    if (!hasChanges) {
+      return pet;
+    }
+
+    // Atualiza no banco
+    try {
+      const updatedPet = await this.prisma.pets.update({
+        where: { id },
+        data: updatedData,
+      });
+      return updatedPet;
+    } catch (error) {
+      throw new Error(`Erro ao atualizar pet: ${error.message}`);
+    }
+  }
+
   async remove(id: string) {
     const pet = await this.prisma.pets.findUnique({
       where: { id },
@@ -116,18 +237,8 @@ export class PetsService {
 
     if (ImgPetsUrls) {
       const urls = Object.values(ImgPetsUrls).filter((url) => url !== null);
-      console.log('URLs to delete:', urls);
 
-      for (const url of urls) {
-        const filePath = url.split(`${this.SUPABASE_BUCKET}/`)[1];
-        const { error } = await supabase.storage
-          .from(this.SUPABASE_BUCKET)
-          .remove([filePath]);
-
-        if (error) {
-          console.error(`Error deleting file ${filePath}:`, error.message);
-        }
-      }
+      await this.deletePhotosFromSupabase(urls);
     }
 
     return this.prisma.pets.delete({
