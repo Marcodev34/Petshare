@@ -1,20 +1,37 @@
-# builder
-FROM node:18 AS builder
-RUN npm install -g pnpm
+# Builder stage
+FROM node:20 AS builder
+RUN npm install -g pnpm prisma
 WORKDIR /app
+
+# Copiar apenas os arquivos de dependências primeiro
 COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile --unsafe-perm
+RUN pnpm install --frozen-lockfile
+
+# Copiar o resto dos arquivos (excluindo node_modules)
 COPY . .
-# garantir que prisma schema exista e gerar client
+# Garantir que prisma schema exista e gerar client
 RUN pnpm prisma generate
 RUN pnpm run build
 
-# produção
-FROM node:18 AS production
-RUN npm install -g pnpm
+# Production stage
+FROM node:20 AS production
+RUN npm install -g pnpm prisma
 WORKDIR /app
+
+# Copiar package.json e pnpm-lock.yaml
 COPY --from=builder /app/package.json /app/pnpm-lock.yaml* ./
-COPY --from=builder /app/node_modules ./node_modules
+
+# Instalar apenas dependências de produção
+RUN pnpm install --frozen-lockfile --prod
+
+# Copiar build da aplicação
 COPY --from=builder /app/dist ./dist
+
+# Copiar schema do Prisma
+COPY --from=builder /app/prisma ./prisma
+
+# Gerar cliente Prisma para produção
+RUN prisma generate
+
 EXPOSE 3000
 CMD ["pnpm", "run", "start:prod"]
