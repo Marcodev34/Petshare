@@ -19,6 +19,8 @@ import {
   SwaggerUpdateUser,
 } from './swagger/user.swagger';
 import { JwtAuthGuard } from 'src/auth/jwt.guard';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { RolesGuard } from 'src/auth/roles.guard';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
@@ -29,6 +31,8 @@ export class UsersController {
   ) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @SwaggerFindAllUsers()
   findAll() {
     return this.userService.findAll();
@@ -47,6 +51,8 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @SwaggerDeleteUser()
   deleteUser(@Param('id') id: string) {
     return this.userService.deleteUser(id);

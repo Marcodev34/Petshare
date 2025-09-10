@@ -8,7 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
 interface JwtPayload {
-  [key: string]: string; // Substitua por uma interface mais específica conforme necessário
+  [key: string]: string;
 }
 
 interface RequestWithUser extends Request {

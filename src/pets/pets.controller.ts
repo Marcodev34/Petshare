@@ -15,7 +15,7 @@ import { PetsService } from './pets.service';
 import { CreatePetDto } from './dto/create-pet.dto';
 import { JwtAuthGuard } from 'src/auth/jwt.guard';
 import { UpdatePetDto } from './dto/update-pet.dto';
-import { User } from 'src/decorators/user.decorator';
+import { User } from 'src/users/decorators/user.decorator';
 import { JwtUser } from 'src/interfaces/user.interface';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { UpdatePhotosDto } from './dto/UpdatePhotos.dto';

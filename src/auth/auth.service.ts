@@ -49,12 +49,20 @@ export class AuthService {
       throw new BadRequestException('Invalid credentials');
     }
 
-    const token = this.JwtService.sign({ id: user.id, email: user.email });
+    const token = this.JwtService.sign({
+      id: user.id,
+      email: user.email,
+      role: user.isAdmin ? 'admin' : 'user',
+    });
 
     return {
       message: 'Login successful',
       token,
-      user: { id: user.id, email: user.email },
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.isAdmin ? 'admin' : 'user',
+      },
     };
   }
 }
